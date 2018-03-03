@@ -20,11 +20,11 @@ path  ./CSDN   #TRAINING COURSE
 		./ClassificationAndRegressionTrees_RandomForest_XGBoost
 			./Courseware
 			./codeExample
-			./homework 
+			./homework3_Rent_xgb 
 		./linearRegressionModel
 			./Courseware
 			./codeExample
-			./homework 
+			./homework1_AmesHousePrice 
 		./LogisticRegressionAndSVM 
 			./Courseware
 			./codeExample
@@ -32,7 +32,7 @@ path  ./CSDN   #TRAINING COURSE
 		./RecommendationSystem
 			./Courseware
 			./codeExample
-			./homework 
+			./homework5_EventUserClustering 
 		./Unsupervised_learning
 			./Courseware
 			./codeExample
@@ -45,3 +45,10 @@ path  ./SystematicLearningAI
 			人工神经网络理论、设计及应用_第2版.pdf
 			向量求导.pdf
 			详解 _ 如何用Python实现机器学习算法.pdf
+
+path ./EssentialBasicKnowledge_AI
+	./必备知识库python
+	./必备知识库概率论
+	./必备知识库矩阵
+	./必备知识库凸优化
+	
