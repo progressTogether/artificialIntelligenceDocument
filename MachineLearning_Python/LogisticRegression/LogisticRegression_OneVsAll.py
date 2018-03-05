@@ -3,8 +3,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy.io as spio
 from scipy import optimize
+import logging
 from matplotlib.font_manager import FontProperties
-font = FontProperties(fname=r"c:\windows\fonts\simsun.ttc", size=14)    # 解决windows环境下画图汉字乱码问题
+from matplotlib import rcParams
+font =  FontProperties(fname='/usr/share/fonts/truetype/wqy/wqy-microhei.ttc',size=20) # 解决ubuntu环境下画图汉字乱码问题
+rcParams['axes.unicode_minus']=False #解决负号‘-‘显示为方块的问题
+
 
 
 def logisticRegression_OneVsAll():
@@ -27,7 +31,7 @@ def logisticRegression_OneVsAll():
     #res = np.hstack((p,y.reshape(-1,1)))
     #np.savetxt("predict.csv", res, delimiter=',')
     
-    print u"预测准确度为：%f%%"%np.mean(np.float64(p == y.reshape(-1,1))*100)
+    print (u"预测准确度为：%f%%"%np.mean(np.float64(p == y.reshape(-1,1))*100) )
      
 # 加载mat文件
 def loadmat_data(fileName):
@@ -51,7 +55,8 @@ def display_data(imgData):
             
     plt.imshow(display_array,cmap='gray')   #显示灰度图像
     plt.axis('off')
-    plt.show()
+    #plt.show()
+    plt.savefig('display_OneVsAll.png')
 
 # 求每个分类的theta，最后返回所有的all_theta    
 def oneVsAll(X,y,num_labels,Lambda):
