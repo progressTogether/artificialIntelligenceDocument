@@ -3,8 +3,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy import optimize
 from matplotlib.font_manager import FontProperties
-font = FontProperties(fname=r"c:\windows\fonts\simsun.ttc", size=14)    # 解决windows环境下画图汉字乱码问题
-
+import numpy as np
+from matplotlib import pyplot as plt
+from matplotlib.font_manager import FontProperties
+from matplotlib import rcParams
+import logging
+font =  FontProperties(fname='/usr/share/fonts/truetype/wqy/wqy-microhei.ttc',size=20) # 解决ubuntu环境下画图汉字乱码问题
+rcParams['axes.unicode_minus']=False #解决负号‘-‘显示为方块的问题
 
 def LogisticRegression():
     data = loadtxtAndcsv_data("data2.txt", ",", np.float64) 
@@ -19,7 +24,7 @@ def LogisticRegression():
     
     J = costFunction(initial_theta,X,y,initial_lambda)  #计算一下给定初始化的theta和lambda求出的代价J
     
-    print J  #输出一下计算的值，应该为0.693147
+    print (J)  #输出一下计算的值，应该为0.693147
     #result = optimize.fmin(costFunction, initial_theta, args=(X,y,initial_lambda))    #直接使用最小化的方法，效果不好
     '''调用scipy中的优化算法fmin_bfgs（拟牛顿法Broyden-Fletcher-Goldfarb-Shanno）
     - costFunction是自己实现的一个求代价的函数，
@@ -29,7 +34,7 @@ def LogisticRegression():
     '''
     result = optimize.fmin_bfgs(costFunction, initial_theta, fprime=gradient, args=(X,y,initial_lambda))    
     p = predict(X, result)   #预测
-    print u'在训练集上的准确度为%f%%'%np.mean(np.float64(p==y)*100)   # 与真实值比较，p==y返回True，转化为float   
+    print (u'在训练集上的准确度为%f%%'%np.mean(np.float64(p==y)*100) )  # 与真实值比较，p==y返回True，转化为float
     
     X = data[:,0:-1]
     y = data[:,-1]    
@@ -47,19 +52,21 @@ def loadnpy_data(fileName):
 
 # 显示二维图形
 def plot_data(X,y):
-    pos = np.where(y==1)    #找到y==1的坐标位置
+    pos = np.where(y==1)    #找到y==1的坐标位置  pos为y==1所在的行
     neg = np.where(y==0)    #找到y==0的坐标位置
+    #将X的第一列作为横坐标将X的第二列作为纵坐标
     #作图
     plt.figure(figsize=(15,12))
     plt.plot(X[pos,0],X[pos,1],'ro')        # red o
     plt.plot(X[neg,0],X[neg,1],'bo')        # blue o
     plt.title(u"两个类别散点图",fontproperties=font)
-    plt.show()
+    plt.savefig('./Two_category_scatter_graph.png')
 
 # 映射为多项式 
 def mapFeature(X1,X2):
     degree = 2;                     # 映射的最高次方
     out = np.ones((X1.shape[0],1))  # 映射后的结果数组（取代X）
+
     '''
     这里以degree=2为例，映射为1,x1,x2,x1^2,x1,x2,x2^2
     '''
@@ -67,6 +74,17 @@ def mapFeature(X1,X2):
         for j in range(i+1):
             temp = X1**(i-j)*(X2**j)    #矩阵直接乘相当于matlab中的点乘.*
             out = np.hstack((out, temp.reshape(-1,1)))
+    '''
+    取 i=1 
+        j = 0 temp = X1**(1)                #X1
+        j = 1 temp = X1**(0)*(X2 ** (1))    #X2
+       i=2
+        j = 0 temp = X1**(2)                #X1^2
+        j = 1 temp = X1**(1)*(X2 ** (1))    #X1 * X2
+        j = 2 temp = X1**(0)*(X2 ** (2))    #X2^2
+    '''
+    #print (np.ones((X1.shape[0],1)))
+    #print (out)
     return out
 
 # 代价函数
@@ -126,7 +144,7 @@ def plotDecisionBoundary(theta,X,y):
     z = np.transpose(z)
     plt.contour(u,v,z,[0,0.01],linewidth=2.0)   # 画等高线，范围在[0,0.01]，即近似为决策边界
     #plt.legend()
-    plt.show()
+    plt.savefig('./result.png')
 
 # 预测
 def predict(X,theta):
