@@ -13,7 +13,7 @@ def linearRegression():
     scaler = StandardScaler()   
     scaler.fit(X)
     x_train = scaler.transform(X)
-    x_test = scaler.transform(np.array([1650,3]))
+    x_test = scaler.transform(np.array([[1650,3]]))#将
     
     # 线性模型拟合
     model = linear_model.LinearRegression()
