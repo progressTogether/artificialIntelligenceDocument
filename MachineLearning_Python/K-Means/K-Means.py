@@ -29,7 +29,7 @@ def KMeans():
     #initial_centroids = np.array([[3,3],[6,2],[8,5]])   # 初始化类中心
     initial_centroids = kMeansInitCentroids(X,K)
     max_iters = 5
-    runKMeans(X,initial_centroids,max_iters,True)       # 执行K-Means聚类算法
+    runKMeans(X,initial_centroids,max_iters,True,'test')       # 执行K-Means聚类算法
     '''
     图片压缩
     '''
@@ -42,7 +42,7 @@ def KMeans():
     K = 16
     max_iters = 5
     initial_centroids = kMeansInitCentroids(X,K)
-    centroids,idx = runKMeans(X, initial_centroids, max_iters, False)
+    centroids,idx = runKMeans(X, initial_centroids, max_iters, True,'bird')
     print (u'\nK-Means运行结束\n')
     print (u'\n压缩图片...\n')
     idx = findClosestCentroids(X, centroids)
@@ -56,7 +56,7 @@ def KMeans():
     plt.subplot(1,2,2)
     plt.imshow(X_recovered)
     plt.title(u"压缩图像",fontproperties=font)
-    plt.show()
+    plt.savefig('./origin_compass_bird.png')
     print (u'运行结束！')
     
     
@@ -122,13 +122,14 @@ def computerCentroids(X,idx,K):
     return centroids    #centroids结果为Kxn，即类别数目x特征数目 
 
 # 聚类算法
-def runKMeans(X,initial_centroids,max_iters,plot_process):
+def runKMeans(X,initial_centroids,max_iters,plot_process,filename):
     m,n = X.shape                   # 数据条数和维度
     K = initial_centroids.shape[0]  # 类数
     centroids = initial_centroids   # 记录当前类中心
     previous_centroids = centroids  # 记录上一次类中心
     idx = np.zeros((m,1))           # 每条数据属于哪个类
-    
+    all_centroids = []
+    all_centroids.append(centroids)
     for i in range(max_iters):      # 迭代次数
         print (u'迭代计算次数：%d'%(i+1) )
         idx = findClosestCentroids(X, centroids)
@@ -136,12 +137,29 @@ def runKMeans(X,initial_centroids,max_iters,plot_process):
             plt = plotProcessKMeans(X,centroids,previous_centroids) # 画聚类中心的移动过程
             print (previous_centroids.shape)
             previous_centroids = centroids  # 重置
-            filename = 'after_iters' + str(i) + 'result_display'
-            plt.savefig(filename)
+            result_filename = 'after_compress' + filename + str(i)
+            plt.savefig(result_filename)
+            plt.clf()
         centroids = computerCentroids(X, idx, K)    # 重新计算类中心
+        all_centroids.append(centroids)
+    plotAllProcessKMeans(X,all_centroids,filename)
+
     #if plot_process:    # 显示最终的绘制结果
         #plt.show()
     return centroids,idx    # 返回聚类中心和数据属于哪个类
+
+def plotAllProcessKMeans(X,all_centroids,filename):
+    plt.scatter(X[:,0], X[:,1])     # 原数据的散点图
+    number,Row,column = np.shape(all_centroids)
+    for i in range(number):
+        plt.plot(all_centroids[i][:,0],all_centroids[i][:,1],'rx',markersize=10,linewidth=5.0)
+        for j in range(Row-1):
+            p1 = all_centroids[i][j,:]
+            p2 = all_centroids[i][j + 1,:]
+            plt.plot([p1[0],p2[0]],[p1[1],p2[1]],"->",linewidth=2.0)
+    filename = filename + 'all.png'
+    plt.savefig(filename)
+
 
 # 画图，聚类中心的移动过程        
 def plotProcessKMeans(X,centroids,previous_centroids):
