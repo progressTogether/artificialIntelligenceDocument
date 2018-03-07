@@ -47,7 +47,8 @@ def display_data(imgData):
     - 显示即可
     '''
     pad = 1
-    display_array = -np.ones((pad+10*(20+pad),pad+10*(20+pad)))
+    display_array = -np.ones((pad+10*(20+pad),pad+10*(20+pad))) #( (1 + 10x(20 + 1)),( 1 + 10x(20 + 1) ) ) = (211,211)
+    print ('the shape of display_array',display_array.shape)
     for i in range(10):
         for j in range(10):
             display_array[pad+i*(20+pad):pad+i*(20+pad)+20,pad+j*(20+pad):pad+j*(20+pad)+20] = (imgData[sum,:].reshape(20,20,order="F"))    # order=F指定以列优先，在matlab中是这样的，python中需要指定，默认以行

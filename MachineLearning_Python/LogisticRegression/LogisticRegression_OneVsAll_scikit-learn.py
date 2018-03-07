@@ -17,7 +17,7 @@ def logisticRegression_oneVsAll():
     
     predict = model.predict(X) #预测
     
-    print u"预测准确度为：%f%%"%np.mean(np.float64(predict == y)*100)
+    print(u"预测准确度为：%f%%"%np.mean(np.float64(predict == y)*100))
 
 # 加载mat文件
 def loadmat_data(fileName):
