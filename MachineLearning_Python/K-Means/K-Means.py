@@ -10,14 +10,25 @@ font =  FontProperties(fname='/usr/share/fonts/truetype/wqy/wqy-microhei.ttc',si
 rcParams['axes.unicode_minus']=False #解决负号‘-‘显示为方块的问题
 
 
+'''
+    K-means 理论基础及具体步骤
+    1、给定数据                                                 
+    2、确定类别数目K（如K=5），并初始化K个类的中心（如随机选择K个点）   -----对应函数----kMeansInitCentroids
+    3、对每个样本点，计算离其最近的类（使得每个类拥有自己的一些数据）
+       该样本距离那个聚类中心近则将其划到该类下                      -----对于函数----findClosestCentroids
+    4、对每个类，计算其所有数据的中心，并跳到新的中心                 -----对于函数----computerCentroids           
+    5、重复3、4，直到数据点所属类别不再改变。
+'''
+
 def KMeans():
     '''二维数据聚类过程演示'''
     print (u'聚类过程展示...\n')
     data = spio.loadmat("data.mat")
     X = data['X']
     K = 3   # 总类数
-    initial_centroids = np.array([[3,3],[6,2],[8,5]])   # 初始化类中心
-    max_iters = 10
+    #initial_centroids = np.array([[3,3],[6,2],[8,5]])   # 初始化类中心
+    initial_centroids = kMeansInitCentroids(X,K)
+    max_iters = 5
     runKMeans(X,initial_centroids,max_iters,True)       # 执行K-Means聚类算法
     '''
     图片压缩
@@ -59,24 +70,56 @@ def findClosestCentroids(X,initial_centroids):
     '''计算每个点到每个类中心的距离'''
     for i in range(m):
         for j in range(K):
+            '''reshape(1,-1)指定行数为1，列数设置为-1为default，会在满足行数的情况下满足列数'''
+            '''np.dot()  输入为向量（即  nx1）得到为俩个向量相乘在相加，例如np.dot([1,2],[3,4]) = 11'''
             dis[i,j] = np.dot((X[i,:]-initial_centroids[j,:]).reshape(1,-1),(X[i,:]-initial_centroids[j,:]).reshape(-1,1))
-    
+            '''dis[i,j],样本数为i对第j个类别的距离'''
     '''返回dis每一行的最小值对应的列号，即为对应的类别
-    - np.min(dis, axis=1)返回每一行的最小值
+    - np.min(dis, axis=1)返回每一行的最小值ss
     - np.where(dis == np.min(dis, axis=1).reshape(-1,1)) 返回对应最小值的坐标
      - 注意：可能最小值对应的坐标有多个，where都会找出来，所以返回时返回前m个需要的即可（因为对于多个最小值，属于哪个类别都可以）
-    '''  
+    '''
     dummy,idx = np.where(dis == np.min(dis, axis=1).reshape(-1,1))
-    return idx[0:dis.shape[0]]  # 注意截取一下
+    #idx为样本对应的类别，其长度为样本的数目，所以可以实现将每个样本对应到指定的类别下
+    print ('The shape of idx is',idx.shape[0])
+    print ('dis.shape[0]=',dis.shape[0])
+    # 注意截取一下，可能这里会有特殊情况，但从log来看基本上 dis.shape[0] == idx.shape[0]
+    #特殊情况 比如某个样本到俩个或者俩个以上的距离相等
+    return idx[0:dis.shape[0]]
              
 
 # 计算类中心
 def computerCentroids(X,idx,K):
     n = X.shape[1]
+    print ('特征数目',n)
     centroids = np.zeros((K,n))
+    '''
+    大致思路为将所有样本中idx相同的同一特征数相加求平均值，构成类中心
+    举个例子  样本1 = [1,2,3,4,5,6]  其idx = 1
+             样本2 = [3,4,5,6,7,8] 其idx = 1
+    那么idx=1的类中心为[2,3,4,5,6,7] 
+    备注：idx = 1情况下只有2个样本
+    '''
     for i in range(K):
+
+        '''
+        idx = np.array([0 ,1 ,2,1,2])
+        
+        test3 = np.array([[1,2,3],
+                          [3,4,5],
+                          [7,8,9],
+                          [9,10,11],
+                          [12,13,14]])
+        print (test3.shape[1]) #test3.shape[1] = 3 所以之后会生成 3x3 类别数目x特征数目
+        for i in range(3):
+            print ( np.mean( test3[np.ravel(idx==i),:],axis=0) )#axis=0是按行求平均值
+        #输出结果 [1. ,2. ,3] [6.,7.,8.] [9.5,10.5,11.5] 类别数目x特征数目
+        #当 i = 0时 取idx为0的项[1,2,3] 所以mean = [1. ,2. ,3]
+        #当 i = 1时 取idx为1的项[3,4,5]  [9,10,11]所以mean = [6.,7.,8.]
+        #当 i = 2时 取idx为2的项[7,8,9]  [12,13,14]所以mean = [9.5,10.5,11.5]
+        '''
         centroids[i,:] = np.mean(X[np.ravel(idx==i),:], axis=0).reshape(1,-1)   # 索引要是一维的,axis=0为每一列，idx==i一次找出属于哪一类的，然后计算均值
-    return centroids
+    return centroids    #centroids结果为Kxn，即类别数目x特征数目 
 
 # 聚类算法
 def runKMeans(X,initial_centroids,max_iters,plot_process):
@@ -91,10 +134,13 @@ def runKMeans(X,initial_centroids,max_iters,plot_process):
         idx = findClosestCentroids(X, centroids)
         if plot_process:    # 如果绘制图像
             plt = plotProcessKMeans(X,centroids,previous_centroids) # 画聚类中心的移动过程
+            print (previous_centroids.shape)
             previous_centroids = centroids  # 重置
+            filename = 'after_iters' + str(i) + 'result_display'
+            plt.savefig(filename)
         centroids = computerCentroids(X, idx, K)    # 重新计算类中心
-    if plot_process:    # 显示最终的绘制结果
-        plt.show()
+    #if plot_process:    # 显示最终的绘制结果
+        #plt.show()
     return centroids,idx    # 返回聚类中心和数据属于哪个类
 
 # 画图，聚类中心的移动过程        
@@ -116,7 +162,7 @@ def kMeansInitCentroids(X,K):
     centroids = np.zeros((K,X.shape[1]))
     np.random.shuffle(m_arr)    # 打乱m_arr顺序    
     rand_indices = m_arr[:K]    # 取前K个
-    centroids = X[rand_indices,:]
+    centroids = X[rand_indices,:]  #从X中随机选取K个样本作为centroids
     return centroids
 
 if __name__ == "__main__":

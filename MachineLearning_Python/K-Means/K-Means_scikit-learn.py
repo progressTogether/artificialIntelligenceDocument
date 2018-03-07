@@ -13,7 +13,8 @@ def kMenas():
     
     plt.scatter(X[:,0], X[:,1])     # 原数据的散点图
     plt.plot(centroids[:,0],centroids[:,1],'r^',markersize=10)  # 聚类中心
-    plt.show()
-
+    filename = './k-mean_by_scikit-learn.png'
+    plt.savefig(filename)
+    print ('执行完毕并将结果保存到',filename)
 if __name__ == "__main__":
     kMenas()
