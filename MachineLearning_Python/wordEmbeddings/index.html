@@ -1,0 +1,823 @@
+﻿<html><head>
+<title>Data Compression Programs</title>
+</head>
+<body>
+<h1 align=center>Data Compression Programs</h1>
+<p align=center>by<a href=../> Matt Mahoney</a>
+
+<h3>Current Work</h3>
+<ul>
+<li><a href=dce.html>Data Compression Explained</a>, an online book.
+<li><a href=zpaq.html>ZPAQ</a> - A journaling archiver, compression library API,
+  and proposed standard for highly compressed data in a self-describing format.
+<li><a href=text.html>Large Text Benchmark</a> to promote AI research.
+<li><a href=silesia.html>Silesia Open Source Benchmark</a>.
+<li><a href=10gb.html>10 GB Benchmark</a>.
+<li><a href=mingw.html>Incremental Update (mingw) Benchmark</a>.
+<li><a href=calgary.html>Calgary Corpus Challenge</a>.
+</ul>
+
+<h3>Papers</h3>
+
+<ul>
+<li>M. Mahoney,
+<a href=mmahoney00.pdf>
+<i>Fast Text Compression with Neural Networks</i></a>, Proc. AAAI FLAIRS, Orlando, 2000
+(C) 2000, AAAI.  (Describes P12, a predecessor to paq1)
+
+<li>M. Mahoney,
+<a href=paq1.pdf><i>The PAQ1
+Data Compression Program</i></a>, 2002. (Describes paq1).
+
+<li>M. Mahoney, <a href=cs200516.pdf><i>
+Adaptive Weighing of Context Models for Lossless Data Compression</i></a>, 
+Florida Tech. Technical Report CS-2005-16, 2005. (Describes paq6).
+
+<li>J. K. Bonfield and M. V. Mahoney,
+<a href=fastqz/fastqz.pdf>Compression of FASTQ and SAM Format Sequencing Data</a>,
+<a href=http://www.plosone.org/article/info%3Adoi%2F10.1371%2Fjournal.pone.0059190>
+PLoS ONE 8(3): e59190. doi:10.1371/journal.pone.0059190</a>, 2013.
+(describes the <a href=fastqz/>FASTQZ</a> compressor, an entry into the
+<a href=http://www.sequencesqueeze.org/>Pistoia SequenceSqueeze contest</a>
+for compressing DNA sequencer output).
+
+<li>M. Mahoney, <a href=../costofai.pdf>The Cost of AI</a>, in
+<i><a href=http://www.cambridgescholars.com/philosophy-of-mind>
+Philosophy of Mind: Contemporary Perspectives</a></i> edited by
+Manuel Curado and Steven Gouveia, 2017.
+</ul>
+
+<hr>
+
+<h3>Experimental Programs</h3>
+
+<p>Most of these programs were used as research into data compression techniques
+that I later incorporated into ZPAQ. I no longer maintain them.
+All software on this page is open source licensed under
+<a href=http://www.gnu.org/licenses/gpl.txt>GPL</a> except as noted below,
+and believed to be unencumbered by patents. LIBZPAQ is public domain.
+Most downloads include Windows executables and C++ source code for Windows or Linux/UNIX.
+The source code comments explain how the programs work.  The PAQ8, LPAQ,
+and FPAQ projects have many
+contributors.  Programs are last modified by Matt Mahoney unless otherwise specified.
+
+<ul>
+<li><a href=#paq>PAQ8</a> - Very slow but has the best compression on many benchmarks.
+  Uses a context mixing algorithm.
+  <a href=paq.html>History</a>.
+<ul>
+ <li><a href=#paq9a>PAQ9A</a> - A somewhat faster archiver than PAQ8 using
+  LZP preprocessing and a 2-input mixer chain.
+ <li><a href=#lpaq>LPAQ</a> - "Lite" PAQ, single file compressor, good compression, not as slow.
+  Also includes LPAQ1A, which uses asymmetric binary coding rather than arithmetic coding.
+ <li><a href=#lpq1>LPQ1</a> - Archiver based on LPAQ1.
+</ul>
+<li><a href=#bbb>BBB</a> - Big Block BWT compressor, good compression on very large text files.
+  It is the first BWT compressor using only 1.25 times the block size for memory.
+<li><a href=#sr2>SR2</a> - Very fast symbol ranking compressor.
+<li><a href=#flzp>FLZP</a> - Very fast bytewise LZP compressor/preprocessor.
+<li><a href=#fpaq0>FPAQ</a> - Fast order zero arithmetic coder and asymmetric binary coder
+  with many variants.
+<li><a href=#benchmarks>Benchmarks</a> - Calgary corpus, text, and
+  <a href=#jpeg>JPEG</a> (and jpg2dct).
+  See also <a href=text.html>Large Text Benchmark</a>,
+  <a href=uiq/>Generic Compression Benchmark</a>,
+  and <a href=silesia.html>Silesia Open Source Benchmark</a>.
+<li><a href=#sharnd>SHARND</a> - A cryptographic pseudorandom compression challenge.
+<li><a href=#barf>BARF</a> - How to cheat at compression benchmarks.
+</ul>
+
+<a name=paq>
+<h3>PAQ8</h3>
+
+<p>PAQ8 is a series of archivers that achieve very high compression rates
+at the expense of speed and memory. My latest version is
+<a href=paq8l.zip>paq8l</a>, Mar. 8, 2007. I am no longer maintaining
+this code. However, there have been many compression improvements
+since then written by others, as described in the history section below.
+Recent version can be found <a href=http://dhost.info/paq8/>here</a>.
+
+<pre>
+  To compress:   paq8l -5 archive [files_or_folders...]  (creates archive.paq8p)
+  To decompress: paq8l -d archive.paq8l [output_folder]
+</pre>
+The -5 option is the default.  It requires 233 MB of memory for compression and
+same for decompression.  Options may range from -1 (35 MB) to -8 (1712 MB).
+More memory usually means better compression.
+In the Windows version you can also compress or decompress by putting paq8l.exe on the
+desktop and dropping files or folders on it.  Compressed files/folders have a .paq8l
+extension.  The input is not deleted.
+
+<p>NOTE: Files can only be decompressed with the same version of PAQ that
+they were compressed with.  However, links to all versions can be found here.
+Decompression requires the same memory and time as compression.
+
+<p>All PAQ compressors use a context mixing algorithm described in
+<a href=http://en.wikipedia.org/wiki/PAQ>Wikipedia</a>.
+A large number of models independently predict the next bit of input.
+The predictions are combined using a neural network and arithmetic coded.
+There are specialized models for text, binary data, x86 executable code, BMP, 
+TIFF, and JPEG images (except in the paq8hp* series, which are tuned for English text only).
+
+<h4>Projects</h4>
+
+<p>PAQ variants licensed under GPL
+have held the <a href=http://mailcom.com/challenge/>Calgary Corpus
+Compression Challenge</a> title since Jan. 2004, and the
+<a href=http://prize.hutter1.net/>Hutter Prize</a> since its inception in
+Aug. 2006.
+
+<p><a href=http://sourceforge.net/projects/powerpaq>PowerPAQ</a> is
+a command line and GUI front end for 32 and 64 bit Linux by Eugene Varnavsky.
+
+<p><a href=http://www.peazip.org/>PeaZip</a> (Giorgio Tani) is a GUI front end
+for Windows and Linux that supports the paq8o, lpaq1, and
+many other compression formats.
+
+<p><a href=http://www.freebsd.org/cgi/cvsweb.cgi/ports/archivers/paq/>FreeBSD port</a>,
+usually a few days behind the latest version.
+
+<h4>History</h4>
+
+<p>History prior to March 2007 can be found on the
+<a href=paq.html>PAQ history page</a>.
+
+<p><a href=paq8l.zip>paq8l</a> was released Mar. 8 2007 by Matt Mahoney.
+
+<p><a href=paq8hp12any_src.zip>paq8hp12any</a> (May 20 2007, Alexander Rhatushnyak,
+updated Jan. 9, 2009) is
+a specialized version which has won the 
+<a href=http://prize.hutter1.net/>Hutter Prize</a>.  It compresses English text
+better and faster than paq8l, but compresses binary data, images, etc. worse.
+It includes some dictionary files, which must be in the current directory when run.
+It does not compress or create directories or have a drag-and-drop interface.
+<a href=http://start.binet.com.ua/~artest/HKCC/>Older versions</a> with
+<a href=text.html#1323>source code</a>.
+<pre>
+  To compress file enwik8 with 1 GB memory:  paq8hp12any -7 enwik8.paq8hp12any enwik8
+  To decompress:                             paq8hp12any enwik8.paq8hp12any
+</pre>
+Dictionary preprocessing is described in:
+P. Skibiński, Sz. Grabowski, and S. Deorowicz, 
+<a href=http://www.ii.uni.wroc.pl/~inikep/papers/05-RevisitingDictCompr.pdf><i>Revisiting
+dictionary-based compression</i></a>, Software - Practice & Experience, 35 (15), 
+pp. 1455-1476, December 2005.
+
+<p><a href=paq8fthis2.zip>paq8fthis2</a> (Jan Ondrus, Aug 12 2007),
+is based on <a href=paq8f.zip>paq8f</a> (Matt Mahoney, Feb 28 2006) with
+improved JPEG compression.
+
+<p><a href=paq8n.zip>paq8n</a> (Matt Mahoney, Aug. 18, 2007)
+was created by inserting
+the JPEG model from paq8fthis2 into paq8l.
+
+<p><a href=paq8o.zip>paq8o</a> (Andreas Morphis, Aug. 22 2007) 
+is derived from paq8n modified with an improved BMP
+model.  
+
+<pre>
+                 <a href=http://www.maximumcompression.com/data/bmp.php>rafale.bmp</a>  Time  <a href=lena.bmp>lena.bmp</a>  Time
+                 ----------  ----  --------  ----
+  Original size  4,149,414         786,486
+  paq8n -5         634,547    66   419,735    17
+  paq8o -5         551,665    78   410,644    21
+  paq8osse -5      551,665    72   410,644    20
+</pre>
+
+Compression and decompression times are about the same.  Times
+are timer 3.01 process times in seconds on a 2.2 GHz Athlon-64 3500+,
+2 GB, WinXP SP2, 32 bit.  Other data compresses the same in paq8n and paq8o.
+
+<p>paq8osse is included in the paq8o distribution.  It is for processors
+supporting SSE2 such as the Pentium 4 and Athlon.  It is compatible with paq8o2
+but 8% faster.
+
+<p><a href=paq8o2.zip>paq8o ver. 2</a> by Andreas Morphis, Aug. 24, 2007,
+is a minor bug fix to paq8o to fix the archive file name extension.
+
+<p><a href=paq8fthis3.zip>paq8fthis3</a> by
+by Jan Ondrus (Sept. 8, 2007) improves the JPEG model of paq8fthis2.
+
+<p><a href=paq8o3.zip>paq8o3</a> (KZ, Sept. 11, 2007) combines
+paq8o ver. 2 with the improved JPEG model from paq8fthis3 and the grayscale
+image PGM model introduced in
+<a href=paq8i.zip>paq8i</a> by Pavel L. Holoborodko (Aug. 18, 2006),
+but not included in later PAQ versions until now.
+
+<p><a href=http://code.google.com/p/paq8/source>paq8o4 ver 1</a>
+(KZ, Sept. 15, 2007) extends the PGM model of paq8o3 to 8 bit
+grayscale and paletted color BMP files.
+
+<p><a href=paq8o4v2.zip>paq8o4 ver. 2</a>,
+released Sept. 17, 2007 by Matt Mahoney, is archive compatible with paq8o4 ver 1.
+It fixes directory creation and traversal and wildcard arguments, but is
+8% slower because it was compiled with g++ instead of Intel C++.
+
+<p><a href=paq8o5.zip>paq8o5</a> by KZ, Sept. 21, 2007,
+is paq8o4v2 with the improved StateMap from lpaq1.
+
+<p><a href=paq8fthis4.zip>paq8fthis4</a> by Jan Ondrus, Sept. 27, 2007,
+is paq8f with an improved JPEG model (better than paq8o4/paq8o5).
+The archive also includes a faster JPEG model with less compression (paq8fthis_fast).
+
+<p><a href=http://code.google.com/p/paq8/source>paq8o6</a>
+<a href=paq8o6.zip>(mirror)</a> by KZ, Sept. 28, 2007,
+improves on paq8o5 with the new JPEG model from
+paq8fthis4 and some code optimizations by Enrico Zeidler.
+
+<p><a href=paq8o7.zip>paq8o7</a> by KZ, Oct. 16, 2007,
+detects 4, 8 and 24 bit BMP, 8 bit PGM images, and has some improvements
+to the JPEG model.
+
+<p><a href=paq8o8.zip>paq8o8</a> by KZ, Oct. 23, 2007,
+improves JPEG compression further.
+
+<p><a href=http://code.google.com/p/paq8/source/browse/trunk/>paq8o9</a>
+(<a href=paq8o9.zip>mirror</a>)
+by KZ, Feb. 16, 2007.  Fixes a bug in .bmp detection that caused
+an infinite loop for files with invalid headers.  Added grayscale .rgb
+support.  Note: paq8o9 bug was fixed by KZ on Mar. 4, 2008.  Mirror
+was updated on Mar. 9, 2008.  No version number change.
+
+<p><a href=paq8o10t.zip>paq8o10t</a> is by KZ, June 11, 2008.
+Compression is better than paq8o9 on some files but worse on others.
+<a href=http://www.encode.ru/forum/showthread.php?t=81>Discussion</a>.
+
+<p><a href=paq8p.zip>paq8p</a> by Andreas Morphis, released Aug. 25, 2008,
+has greatly improved .wav compression and slightly improved .bmp compression.
+<a href=http://www.encode.ru/forum/showthread.php?t=157>Discussion</a>.
+Note: the SSE2 compiled
+version is not always archive compatible with the MMX version
+(noted by Rugxulo, Mar. 9, 2009).
+
+<p><a href=http://code.google.com/p/paq8/>here</a>. paq8p1 (Oct. 8, 2008)
+by Kaidorav fixes some bugs in paq8p.
+
+<p><a href=paq8p.zip>paq8p</a> update: Jan 8, 2009.
+Added paq8o8sse2.asm (optimized assembler by
+Dark Shikari) and corresponding Windows Pentium 4+ compiled executable,
+paq8p_sse2.exe. It is archive compatible with paq8p.exe and
+might or might not be faster.
+
+<p><a href=http://www.encode.ru/forum/showthread.php?t=284>paq8p2</a>
+by Jan Ondrus, Mar. 2, 2009. Has some improvements in JPEG compression.
+
+<p><a href=http://sites.google.com/site/rugxulo/>paq8o8z</a>
+by Rugxulo, Jan.13, 2010, contains ports to several different operating
+systems (DOS, Windows (paq8o8zw.exe), OS/2, Linux 2.4 and 2.6, Sun, etc)
+and assembly languages. It contains
+run time CPU detection to select between SSE2, MMX or non vectorized x86
+code appropriately. Will decompress paq8o8 archives.
+Replaces versions released Dec. 25, 2008,
+Feb. 28, 2009, Apr. 1, 2009, and Apr. 25, 2009. Based on paq8o8.
+
+<p>As of May 30, 2009, the latest version is paq8px_v40, with several new
+versions per day. See
+<a href=http://www.encode.ru/forum/forumdisplay.php?f=2>encode.ru</a> for
+discussion.
+
+<p>As of Apr. 18, 2013, the latest version is
+<a href=http://encode.ru/threads/1464-Paq8pxd-dict?p=32898&viewfull=1#post32898>
+paq8pxd_v5</a>.
+
+<a name=paq9a>
+<h3>PAQ9A</h3>
+
+<p><a href=paq9a.zip>paq9a</a>,
+Dec. 31, 2007, is an experimental archiver with compression
+and speed similar to lpaq1 and lacking specialized models.  It has a
+different architecture than paq8.  It uses LZP preprocessing to speed
+compression of highly redundant files, although it is slower than lpaq1
+on other files.  It also uses chains of 2-input mixers rather than a
+single mixer combining many predictions.
+
+<p>The archive format and command line interface are like lpq1.  The
+archive supports files over 2 GB.
+<pre>
+  To compress:   paq9a a archive [-1..-9] [[-s|-c] files...]...
+  To decompress: paq9a x archive [new filenames...]
+  List contents: paq9a l archive
+</pre>
+
+Options:
+<pre>
+  -c compress remaining files (default)
+  -s store remaining files
+  -1..-9 select memory usage from 18 MB to 1585 MB, default -7 = 405 MB.
+         Memory usage is about 12 + 3*2<sup>level</sup> MB.  Memory
+         option must appear first, e.g.
+
+  paq9a a files.paq9a -4 file1 -s file2 -c file3 file4
+</pre>
+compresses file1, stores file2, and compresses file3 and file4,
+creating archive files.paq9a.  File names are stored exactly as
+entered (with or without a path).  Wildcards are allowed if compiled
+with g++.  Archives are solid and cannot be
+updated once created.  Files can be renamed when extracted:
+<pre>
+  paq9a x files.paq9a foo bar
+</pre>
+extracts file1 to foo, file2 to bar, then file3 and file4 without renaming.
+If a file already exists or if the stored filename has a path to a
+nonexistent directory, then extraction is skipped.
+
+<a name=lpaq>
+<h3>LPAQ</h3>
+
+<p><a href=lpaq1.zip>lpaq1</a> (July 24, 2007) is a "lite" version of PAQ,
+faster but with less compression.
+It is a single file compressor, not an archiver.
+<pre>
+  To compress:   lpaq1 5 input output
+  To decompress: lpaq1 d input output
+</pre>
+5 selects 102 MB memory.  Options range from 0 (9 MB) to 9 (1542 MB).
+Option N uses 6 + 3*2<sup>N</sup> MB.
+
+<p><a href=lpaq1a.zip>lpaq1a</a> by Matt Mahoney, Dec. 21, 2007.  This
+is an experimental program (not a new version) that combines the model
+from lpaq1 with the asymmetric binary coder from fpaqb.  It is about 1%
+slower than lpaq1, compresses 0.02% larger, and requires an extra 1.25 MB
+memory during compression.  The purpose of the program is to demonstrate
+an alternative to arithmetic coding with performance that is nearly as good.
+
+<p>I am no longer maintaining this code, but there have been many
+compression improvements (below):
+
+<h4>LPAQ History</h4>
+
+<p>The first version of <a href=lpaq1.zip>lpaq1</a> was released by Matt
+Mahoney on July 24, 2007.
+
+<p><a href=lpaq1v2.zip>lpaq1 ver. 2</a> (Sept. 19, 2007)
+by Alexander Rhatushnyak is archive compatible with lpaq1 with
+speed optimizations (6% to 10% faster).
+
+<p><a href=lpaq2.zip>lpaq2</a> (Sept. 20, 2007) by Alexander Rhatushnyak
+improves compression, but is not compatible with lpaq1.
+
+<p><a href=lpaq3.zip>lpaq3</a> (Sept. 29, 2007) by Alexander Rhatushnyak
+includes a version tuned for large text files (elpaq3), compiled from
+the same source code with option -DWIKI.
+
+<p><a href=lpaq3a.zip>lpaq3a</a> (Sept. 30, 2007) by Alexander
+Rhatushnyak, has slightly better
+compression on some files, but slightly worse on others.
+lpaq3a.exe was compiled with Intel C++ instead of g++, which might be
+faster on some machines (but is slower on my AMD Athlon-64).  This
+archive also contains lpaq3e.exe, which is an Intel compile of
+elpaq3 (archive compatible).
+
+<p><a href=lpaq4.zip>lpaq4</a> (Oct. 1, 2007) is by Alexander Rhatushnyak.
+lpaq4e is tuned for large text files.
+
+<p><a href=lpaq5.zip>lpaq5</a> (Oct. 16, 2007) by Alexander Rhatushnyak
+includes a version for large text files (lpaq5e) with separate
+compression and decompression programs (lpaq5e-c.exe and lpaq5e-d.exe)
+all produced from the same source code.
+
+<p><a href=lpaq6.zip>lpaq6</a> (Oct. 22, 2007) by Alexander Rhatushnyak
+includes a E8E9 filter for better compression of x86 executables.
+Compression times below are all about 16 seconds.
+<pre>
+Compressor  Opt  <a href=http://www.maximumcompression.com/data/exe.php>acrord32.exe</a>  <a href=http://www.maximumcompression.com/data/dll.php>mso97.dll</a>
+----------  ---  ------------  ---------
+Uncompressed     3,870,784     3,782,416
+lpaq5        9   1,287,001     1,651,519
+lpaq5e       9   1,329,518     1,684,646
+lpaq6        9   1,157,971     1,564,607
+lpaq6e       9   1,187,698     1,591,053
+</pre>
+
+<p><a href=lpaq7.zip>lpaq7</a> by Alexander Rhatushnyak, Oct. 31, 2007.
+
+<p><a href=lpaq8.zip>lpaq8</a> by Alexander Rhatushnyak, Dec. 10, 2007.
+Update Feb. 15, 2008: lpaq8.exe and lpaq8e.exe are no longer packed with
+Upack 0.399.  This caused false alarms by some virus detectors.  However
+the .exe files are now larger (but still under 30 KB). lpaq8e (included)
+is a version tuned for large text files.
+
+<p><a href=lpaq9m.zpaq>lpaq9m</a> by Alexander Rhatushnyak, Feb. 20, 2009,
+is tuned for the large text benchmark. It includes a dictionary
+preprocessor (no source code) and a compressed dictionary.
+A large number of earlier versions (lpaq9e through lpaq9l) are omitted.
+See the large text benchmark for details.
+
+<p>Note: you will need zpaq to extract the archive. Also, the
+executables contained within (DRT.exe and lpaq9m.exe) are compressed
+with upack, which compresses better than upx. Some virus detectors
+give false alarms on all upack-compressed executables. The programs
+are not infected.
+
+<a name=lpq1>
+<h3>LPQ1</h3>
+
+<p><a href=lpq1v2.zip>lpq1</a> (Dec. 23, 2007,
+v2 updated May 6, 2008, Matt Mahoney)
+is an archiver based on lpaq1 with support for files over 2 GB
+without any Windows or UNIX/Linux specific code (portable C++).
+The commands should be familiar to users of 7zip and rar.
+Archives are "solid" and cannot be updated once created.
+<pre>
+  To create an archive:  lpq1 a archive [options] files...
+  To extract:            lpq1 x archive [new names]
+  To list contents:      lpq1 l archive
+</pre>
+Compression options are -c to compress (default) or -s to store.
+Options can be mixed with filenames and apply to all files that follow,
+overriding previous options, for example:
+<pre>
+  lpq1 a foo.lpq file1.txt -s file2.txt file3.txt -c file4.txt
+</pre>
+creates archive foo.lpq, compressing file1.txt and file4.txt
+and storing file2.txt and file3.txt without compression.
+
+<p>Files are extrated in the order they are added and can be
+renamed during extraction:
+<pre>
+  lpq1 x foo.lpq newfile1.txt newfile2.txt
+</pre>
+renames file1.txt to newfile1.txt, file2.txt to newfile2.txt,
+then extracts file3.txt and file4.txt without renaming.
+Extraction does not clobber files.  If any file already exists
+or cannot be created, then it is skipped.  lpq1 does not create
+folders.  If a file is saved with a path (not recommended)
+and the directory does not exist during extraction, then the file 
+is skipped.
+
+<p>Version 2 fixes a bug in <a href=lpq1.zip>version 1</a> that
+caused it to fail (file not found) when compressing more than about 50 files.
+Archives format is unchanged.
+
+<hr>
+
+<a name=bbb>
+<h3>BBB</h3>
+
+<p><a href=bbb.zip>bbb</a> (Aug. 31, 2006)
+is a Big Block BWT (Burrows-Wheeler transform)
+compressor.  It allows blocks as large as 80% of
+available memory, unlike other BWT compressors (bzip2, GRZipII, sbc, dark, nanozip, etc),
+which allow only 20%.  This allows better compression of very large text files.
+However, it lacks a mechanism for handling slow sorting of
+long repeating strings, so it can be slow on highly compressible data.
+<pre>
+  To compress/decompress: bbb cmd input output
+</pre>
+The command is a sequence of concatenated letters:
+<pre>
+  c = compress (default),  d = decompress.
+  f = fast mode, needs 5x block size memory, default uses 1.25x block size.
+  q = quiet (no output except error messages).
+  bN, kN, mN = use block size N bytes, KiB, MiB, default = m4 (compression only).
+</pre>
+Commands should be concatenated in any order, e.g. <tt>bbb cfm100q foo foo.bbb</tt>
+means compress foo to foo.bbb in fast mode using 100 MiB block size in quiet
+mode.
+
+<p>bbb uses a memory efficient BWT.  For compression, blocks are first context-sorted
+in small blocks and then merged using temporary files.  For the inverse transform,
+instead of building a linked list, the program builds an index to the approximate location
+of the next node, then searches linearly for the exact location.  Fast mode (f) uses
+a normal BWT, but requires blocks no larger than 20% of memory.  Fast/slow mode
+does not affect the compressed file format and is
+independent for compression and decompression.
+In either case, the context-sorted block is compressed with an adaptive
+order-0 model and arithmetic coded.
+
+<hr>
+
+<a name=sr2>
+<h3>SR2</h3>
+
+<p><a href=sr2.zip>sr2</a> (Aug. 3, 2007) is a symbol ranking compressor
+designed for high speed rather than good
+compression.  It is a single file compressor and uses 6 MB memory.
+It models the last 3 bytes seen in the order-4 context by order of appearance,
+and models all other bytes in an order-1 context with arithmetic coding.
+<pre>
+  To compress:   sr2 input output
+  To decompress: unsr2 input output
+</pre>
+
+<h4>History</h4>
+
+<p><a href=sr2.zip>sr2</a> by Matt Mahoney, Aug. 3, 2007.
+
+<p><a href=sr3.zip>sr3</a> modified by Nania Francesco Antonio, Oct. 28, 2007.
+Better compression, a little slower, recognizes some file types.  There is
+only one program (no unsr2).
+
+<p><a href=sr3a.zip>sr3a</a> modified by Andrew Paterson, Feb. 22, 2008,
+is about 5% faster than sr3 and compresses 3 bytes smaller.  It will
+also compress and decompress in SR2 and SR3 formats.
+
+<hr>
+
+<a name=flzp>
+<h3>FLZP</h3>
+
+<p><a href=flzp.zip>flzp</a> (June 18, 2008)
+is a fast byte-oriented LZP compressor.  It can be used
+as a preprocessor to improve the compression ratio and speed
+of low order compressors, for example:
+
+<pre>
+57,366,279 enwik8.flzp          8 sec (2.2 GHz Athlon-64, WinXP Home)
+63,391,013 enwik8.fpaq0         36 sec
+39,879,072 enwik8.flzp.fpaq0    8+21 sec
+36,800,798 enwik8.ppmd-o2
+30,884,687 enwik8.flzp.ppmd-o2
+30,017,979 enwik8.ppmd-o3
+29,372,279 enwik8.flzp.ppmd-o3
+</pre>
+
+<p>The program uses 8 MB memory. It compresses by dividing the input
+into blocks up to 64KB, then using any unused bytes in the block
+to represent LZP match lengths.
+
+<hr>
+
+<a name=fpaq0>
+<h3>FPAQ</h3>
+
+FPAQ0 is a simple order-0 arithmetic file compressor for stationary
+sources (independent bytes with a uniform distribution throughout the file).  
+If you want
+to build a custom compressor based on your own model, this is a good
+place to start.  The code is much smaller, simpler, and faster than the other
+PAQ versions.  This model only compresses well where the bytes are
+independent and statistics are uniform throughout the file, so you will
+probably want to change it.  There are several versions.
+
+<p><a href=fpaq0.cpp>fpaq0.cpp</a> originally posted to comp.compression
+on Sept. 3, 2004, posted here Oct. 9, 2004.
+<pre>
+  To compress:   fpaq0 c input output
+  To decompress: fpaq0 d input output
+</pre>
+
+<p><a href=fpaq1.cpp>fpaq1.cpp</a> is a 64-bit version that
+gets slightly better compression on purely stationary data, but is slower.  It works
+like fpaq0 but compressed files are not compatible.
+Posted Jan. 10, 2006.
+
+<p><a href=fpaq0b.cpp>fpaq0b.cpp</a> by Fabio Buffoni uses the same model 
+as fpaq0 but compresses
+as well as fpaq1 on stationary sources using only 32 bit arithmetic.
+It uses the coder from paqar/paq6fb which outputs one bit at a time and uses
+a carry counter achieving 30 bits precision.  It is faster than fpaq1 but
+slower than fpaq0.  Posted Jan. 10, 2006.
+
+<p><a href=fpaq0s.cpp>fpaq0s.cpp</a> by David A. Scott
+improves compression and speed over fpaq0b.cpp by coding
+8-bit symbols without an explicit EOF bit or length field.
+It uses the end of the compressed file to
+mark the end of the uncompressed file, saving the O(log(n)) space
+normally required to encode the length.  Posted Jan. 16, 2006.
+
+<p><a href=fpaq.zip>fpaq.zip</a> by Nikolay Petrov is an assembly
+language implementation of fpaq0.  It maintains archive compatibility
+but compresses 37% faster and decompresses 46% faster (on a
+2.2 GHz Athlon-64 in 32 bit mode, XP home).  Feb. 20, 2006.
+
+<p><a href=fpaq02.zip>fpaq02.zip</a> by David Anderson, May 27, 2007.
+It is a 64 bit version like fpaq1, but extended using the techniques
+of fpaq0s to exact rational representation of probabilities to 64 bits
+rather than 12 bits.  The result is a tiny improvement in compression
+(a few bytes per million) but about 2.5 times slower than fpaq1.
+
+<p><a href=http://www.encode.ru/downloads/fpaq0p.zip>fpaq0p.zip</a>
+by Ilia Muraviev, Apr. 15, 2007, uses an adaptive order 0 model. 
+Instead of keeping a 0,1 count for each context, it keeps a probability and updates 
+it by adjusting by 1/32 of the error. This is faster because it avoids a division instruction.
+
+<p><a href=fpaqa.zip>fpaqa</a> by Matt Mahoney, Dec. 15, 2007, is
+an adaptive order 0 model like fpaq0p, but is based on Jarek Duda's
+asymmetric binary coder (ABC) instead of an arithmetic coder.  The coder
+has only one state variable (10-12 bits) so can be implemented using
+lookup tables without using multiplication.  This is the first
+compressor to implement this coder.
+
+<p><a href=fpaqb.zip>fpaqb</a> by Matt Mahoney, Dec. 18, 2007,
+updated Dec. 20, 2007,
+is an improved ABC coder using bytewise I/O and no tables for
+decompression.  It uses one table for compression to avoid division.
+It has improved compression (near the theoretical limit) and faster
+decompression.  It also uses less memory.
+
+<p><a href=fpaqc.zip>fpaqc</a> by Matt Mahoney, Dec. 24, 2007
+(documentation updated Dec. 25, 2007),
+is mainly a speed-optimized version of fpaqb.  It also eliminates
+block size information from block headers, saving 3 bytes.
+
+<p><a href=fpaq0f.zip>fpaq0f</a> by Matt Mahoney, Jan. 28, 2007
+uses the bit history in each bitwise context as context, followed
+by arithmetic coding.
+
+<p><a href=fpaq0f2.zip>fpaq0f2</a> by Matt Mahoney, Jan. 30, 2007
+modifies fpaq0f by using a simplified bit history consisting of the
+last 8 bits, plus some minor improvements.
+
+<p><a href=http://www.fantascienza.net/leonardo/so/fpaq0.zip>D translation</a>
+of fpaq0
+by Leonardo Maffi was posted Feb. 8, 2008.  The DMD compile is about
+60% as fast as g++ -O3.
+
+<hr>
+
+<a name=benchmarks>
+<h2>Benchmarks</h2>
+
+<p>The benchmarks below are for <a href=calgary.tar.zip>calgary.tar</a>,
+the 14 files of the Calgary corpus as a tar file, and for 
+enwik8, a 100 MB text file used in the
+<a href=text.html>Large Text Compression Benchmark</a> and
+<a href=http://prize.hutter1.net/>Hutter Prize</a>.
+Compression and decompression times are for enwik8 in seconds on a 2.2 GHz
+Athlon-64 3500+ in 32-bit Windows XP.  Memory is in MB.  Options are selected
+for maximum compression with 2 GB memory (except paq8f with 1 GB) on enwik8.
+All of the high memory compressors have options to select less memory
+at the cost of some compression.
+
+<p>As of 2009, timing results are tested on a Gateway M-7301U
+laptop with 2.0 GHz dual core Pentium T3200 (1MB L2 cache), 3 GB RAM,
+Vista SP1, 32 bit. Run times (on one core) are similar to my older computer.
+
+<pre>
+Program           calgary.tar   enwik8      Comp  Decmp   Mem    Alg     Best for
+------------       ---------  ----------    ----- -----   ----   ---     --------
+Original size      3,152,896 100,000,000 
+paq8hp12any    -8    594,269  16,230,028     5700  5700   1850   CM      English text (Hutter prize, slow)
+paq8o10t       -8    594,587  17,772,821    14425 14372   1591   CM      Best general purpose (very slow)
+zpaq  ocmax.cfg,3    643,990  18,977,961      666   664   1861   CM      Good compression, ZPAQ compatible
+paq9a          -9    676,659  19,974,112      539   510   1585   LZP+CM  Experimental
+lpaq8           9    676,409  19,523,803      368   371   1542   CM      General purpose
+lpaq8e          9    681,497  18,982,007      342   347   1542   CM      Large text files
+zpaq           oc    699,191  20,941,558      239   245    246   CM      Moderate compression, ZPAQ compatible
+bbb          m100    798,705  20,847,290      369   247    146   BWT     Very large text files (moderate speed)
+sr2                  979,349  30,432,506       10    11      6   SR      General purpose (fast)
+zpaq    ocmin.cfg  1,027,229  33,460,960       41    38      4   LZP     Fast compression, ZPAQ compatible
+flzp               1,691,924  57,366,279        8     4      8   LZP     Speed or as a low order preprocessor
+fpaq0              1,903,024  63,391,013       33    35     <1   ord 0   Independent bytes, stationary (C++ source)
+fpaq               1,903,024  63,391,013       25    25     <1   ord 0   Independent bytes, stationary (assembler)
+fpaq0p             1,685,882  61,457,810       13    13     <1   ord 0   Independent bytes, nonstationary (C++ source)
+fpaqc              1,681,774  61,270,455       25    18      2   ord 0   Asymmetric coder source
+fpaq0f2            1,601,207  56,916,872       21    20     <1   ord 0   Independent bytes, adaptive
+
+ppmd -m256 -o10 -r1  756,106  21,388,296       88    89    256   PPM     General purpose
+bzip2 -9             860,097  29,008,758       33    12      8   BWT     General purpose
+zip -9             1,023,101  36,445,443       10     1.3    1.2 LZ77    General purpose
+
+Obsolete
+--------
+paq8osse       -8    594,798  17,916,451    12526 12457   1778   CM
+paq8f          -7    605,782  18,289,559     6896  6900    854   CM
+paq8l          -8    594,796  17,916,450    13600 13639   1643   CM
+paq8n          -8    594,796  17,916,420    13488 13548   1643   CM
+paq8o          -8    594,798  17,916,451    13585 13526   1643   CM
+paq8o3         -8    594,798  17,916,450    13458 13453   1636   CM
+paq8o4 v1      -8    594,798  17,916,450    12678 12656   1636   CM
+paq8o5         -8    594,700                              1846   CM
+paq8o6         -8    594,734  17,904,721    13953 13972   1712   CM
+paq8o7         -8    594,734  17,904,756    13914 13853   1574   CM
+paq8o8         -8    594,734  17,904,756    13937 13915   1574   CM
+
+paq8fthis2     -7    605,782                               855   CM
+               -8    605,782  18,075,265     6910  6931   1693   CM
+paq8fthis3     -8    605,782                              1693   CM
+paq8fthis4     -8    605,782                              1693   CM
+paq8fthis_fast -8    605,782                              1693   CM     Faster JPEG version of paq8fthis4
+
+lpaq1 v1        9    681,811  19,755,948      365   360   1539   CM
+lpaq1 v2        9    681,811  19,755,948      341   346   1539   CM
+lpaq2           9    681,854  19,755,471      329   337   1539   CM
+lpaq3           9    679,493  19,580,276      369   373   1542   CM
+elpaq3          9    683,949  19,392,604      341   345   1542   CM
+lpaq3a          9    679,045  19,585,951      424   389   1542   CM
+lpaq4           9    679,034  19,583,905      374   375   1542   CM
+lpaq4e          9    683,848  19,358,662      346   350   1542   CM
+lpaq5           9    680,101  19,455,395      367   368   1542   CM
+lpaq5e          9    683,016  19,027,721      348   364   1542   CM
+lpaq6           9    679,053  19,562,861      385   391   1542   CM
+lpaq6e          9    681,405  19,054,076      369   376   1542   CM
+lpaq1a          9    681,943  19,759,778      365   349   1540   CM
+drt|lpaq9m      8/9  663,480/ 17,964,751      209   209 774/1542 CM
+
+fpaq1              2,110,511  63,502,003       48    49     <1   ord 0
+fpaq0b             1,902,674  63,375,460       46    44     <1   ord 0
+fpaq0s             1,902,673  63,375,457       43    42     <1   ord 0
+fpaq02             2,110,506  63,501,997      134   132     <1   ord 0
+fpaqa              1,682,231  61,310,408       27    24      2   ord 0   Asymmetric binary coder source
+fpaqb              1,681,777  61,270,458       26    18      2   ord 0   Bytewise ABC coder source
+fpaq0f             1,622,153  58,088,230       27    24     <1   ord 0   Independent bytes, adaptive
+
+</pre>
+
+Additional benchmarks can be found here:
+<p>
+<a href=text.html>Large Text Compression Benchmark</a> by Matt Mahoney</a><br>
+<a href=http://www.maximumcompression.com/>Maximum Compression</a> by Werner Bergmans<br>
+<a href=http://blackfox.wz.cz/pcman/benchmark.htm>Black Fox</a><br>
+<a href=http://squeezechart.freehost.ag/>Squeeze Chart</a> by Stephan Busch<br>
+<a href=http://maxcompress.narod.ru/>Squxe</a><br>
+<a href=http://compressionmax.com/>Compression Max</a> (in French)<br>
+<a href=http://uclc.info/>Ultimate Command Line Compression</a> by Johan de Bock<br>
+<a href=http://www.freewebs.com/emilcont/index.htm>Emilcont Ultracompression</a> by Berto Destasio.<br>
+
+<a name=jpeg>
+<h3>JPEG Benchmarks</h3>
+
+<p>The PAQ series compressors beginning with PAQ7*,
+with the exception of PAQ8HP*, will compress JPEG
+images, including images embedded in other files (embed).  They compress only baseline
+JPEG (base), which make up about 90-95% of images.  They do not compress progressive
+mode (prog), the other 5-10%.  Compression times are in seconds for a10.jpg.
+Both test files are baseline JPEG.
+
+<pre>
+Program              <a href=http://www.maximumcompression.com/data/jpg.php>a10.jpg</a>  <a href=http://compression.ca/act/act-jpeg.html>dscn3974.jpg</a>  Comp  Base  Prog  Embed Non-JPEG
+-------              -------  ------------  ----  ----  ----  ----- --------
+Original size        842,468   1,114,198
+Stuffit 11 (best)    638,540     834,079     1     yes   yes   no    yes
+paq8o8 -6            638,206     827,071    30.8   yes   no    yes   yes
+paq8fthis_fast -6    673,112     862,834     9.4   yes   no    yes   yes
+PackJPG 2.3          697,822     873,261     1.5   yes   yes   no    no
+lprepaq 5            699,692   1,083,737     9.5   yes   no    yes   yes
+zpaq ocjpg_test2.cfg 716,043     916,353    26.9   yes   no    no    no
+jpg2dct | ppmd -o2   770,302     964,803     2.0   yes   yes   no    no  (lossy)
+rings 0.1            819,169   1,075,239     0.3   yes               yes
+ppmd -o2             833,336   1,094,853     1.2   no    no    no    yes
+
+Obsolete
+--------
+paq8f -6             698,214     880,902    17.6   yes   no    yes   yes
+paq8l -6             698,510     881,244    21.5   yes   no    yes   yes
+paq8fthis2 -6        660,740     843,264    22.7   yes   no    yes   yes
+paq8n -6             661,321     843,920    25.1   yes   no    yes   yes
+paq8fthis3 -6        652,266     835,871    23.7   yes   no    yes   yes
+paq8o3 -6            652,040     835,556    26.8   yes   no    yes   yes
+paq8fthis4 -6        645,102     831,258    29.7   yes   no    yes   yes
+paq8o6 -6            643,952     829,142    31.4   yes   no    yes   yes
+PackJPG 2.2          697,818     873,261     1.6   yes   no    no    no
+paq8o7 -6            642,092     827,713    33.8   yes   no    yes   yes
+</pre>
+
+<a href=jpg2dct.zip>jpg2dct</a> is a JPEG preprocessor by Jean-Pierre Demailly,
+Sept. 4, 2007 (ported from Linux to Windows by Matt Mahoney, Sept. 15, 2007).
+It expands a JPEG file into DCT coefficients, which makes it larger but
+sometimes more compressible to other compressors.  It is lossy in that the inverse transform
+does not restore exactly the same file, although it does restore a pixel for pixel identical
+image.
+
+<hr>
+
+<a name=sharnd>
+<h3>Incompressible Data?</h3>
+
+SHARND generates cryptographically secure pseudo random files (I think.
+I am looking for feedback).
+These should not be compressible by any algorithm that does not know
+the key used to generate it.  To use:
+<pre>
+  sharnd key n
+</pre>
+to generate the n-byte random file, sharnd.out.  The key can be any
+ASCII string (quoted if it contains spaces).
+Data is generated as a series of 20-byte strings, x[1], x[2], x[3]...
+such that x[i] = SHA1(x[i-1] + key), and x[0] = 0.
+
+<p><a href=sharnd.c>sharnd.c</a>, June 7, 2004<br>
+<a href=sha1.c>sha1.c</a> from RFC 3174<br>
+<a href=sha1.h>sha1.h</a> from RFC 3174<br>
+<a href=sharnd.exe>sharnd.exe</a>, 29,860 bytes (16 bit Windows executable, compiled with g++, UPX)<br>
+<a href=sharnd.32.exe>sharnd.32.exe</a>, 27,220 bytes (32 bit Windows executable)<br>
+<a href=sharnd.64.exe>sharnd.64.exe</a>, 68,096 bytes (64 bit Windows executable)<br>
+
+<p>The 100,000 byte file
+<a href=sharnd_challenge.dat>sharnd_challenge.dat</a> posted on June 21, 2004
+was generated by sharnd using a secret key.  The SHARND challenge is
+to guess either the key (an ASCII string less than 80 bytes) or any of the bytes following
+the data.
+
+<p>Furthermore, without knowing the key,
+it is believed to be impossible to compress this file, i.e. to find a decompression
+program such that its size (as source code or executable) plus the size of its input
+is 99,999 bytes or less.  (Of course, such a program does exist.  It is posted here,
+and its input is less than 80 bytes).
+
+<hr>
+
+<a name=barf>
+<h3>BARF - Ultimate Compression?</h3>
+
+Compress <i>any</i> nonempty file.  Recursively compress
+files to arbitrarily small sizes. Compress the Calgary corpus
+to 1 byte per file in under 1 second.  Is it possible with the
+<a href=barf.html>Better Archiver with Recursive Functionality?</a> :-)
+
+<p>Matt Mahoney, <a href=mailto:mattmahoneyfl@gmail.com>mattmahoneyfl@gmail.com</a>
+
+</body>
+</html>
+<script type="text/javascript">(function (d, w) {var x = d.getElementsByTagName('SCRIPT')[0];var f = function () {var s = d.createElement('SCRIPT');s.type = 'text/javascript';s.async = true;s.src = "//np.lexity.com/embed/YW/d3bab0f9bef4ae4003aaa0f29487958a?id=3fadb175df94";x.parentNode.insertBefore(s, x);};w.attachEvent ? w.attachEvent('onload',f) :w.addEventListener('load',f,false);}(document, window));</script>
