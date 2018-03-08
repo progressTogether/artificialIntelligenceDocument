@@ -26,8 +26,8 @@ def KMeans():
     data = spio.loadmat("data.mat")
     X = data['X']
     K = 3   # 总类数
-    #initial_centroids = np.array([[3,3],[6,2],[8,5]])   # 初始化类中心
-    initial_centroids = kMeansInitCentroids(X,K)
+    initial_centroids = np.array([[3,3],[6,2],[8,5]])   # 初始化类中心
+    #initial_centroids = kMeansInitCentroids(X,K)
     max_iters = 5
     runKMeans(X,initial_centroids,max_iters,True,'test')       # 执行K-Means聚类算法
     '''
