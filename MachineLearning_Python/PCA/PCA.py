@@ -1,34 +1,55 @@
 #-*- coding: utf-8 -*-
-# Author: Bob
-# Date:   2016.11.24
 import numpy as np
 from matplotlib import pyplot as plt
 from scipy import io as spio
 from sklearn.decomposition import pca
 
 '''
+目的：多个变量之间往往存在着一定程度的相关性，可以通过线性组合的方式，从其中提取信息。
+主成分分析（Principal Components Analysis）：将原始的D维数据投影到低维空间，并尽可能的保留更多信息
+    --投影后的方差最大
+    --最小化重构平方误差
+            ---二者等价
+从而达到降维的目的：用较少的主成分得到较多的信息
+'''
+
+'''
 主成分分析_2维数据降维1维演示函数
 '''
 def PCA_2D():
+    from matplotlib import pyplot as plt
     data_2d = spio.loadmat("data.mat")
     X = data_2d['X']
     m = X.shape[0]
-    plt = plot_data_2d(X,'bo') # 显示二维的数据
-    plt.show()
+
+    #plt = plot_data_2d(X,'bo') # 显示二维的数据
+
     
     X_copy = X.copy()
     X_norm,mu,sigma = featureNormalize(X_copy)    # 归一化数据
-    #plot_data_2d(X_norm)    # 显示归一化后的数据
+    #plot_data_2d(X_norm,'bo')    # 显示归一化后的数据
     #plt.show()
-    
+
     Sigma = np.dot(np.transpose(X_norm),X_norm)/m  # 求Sigma
+    #print (X_norm)
+    print (Sigma)
     U,S,V = np.linalg.svd(Sigma)       # 求Sigma的奇异值分解
-    
-    plt = plot_data_2d(X,'bo') # 显示原本数据
+    print (U)
+
+    plt.figure(12)
+    plt.subplot(221)
+    plt.plot(X[:,0],X[:,1],'bo')
     drawline(plt, mu, mu+S[0]*(U[:,0]), 'r-')  # 线，为投影的方向
 
-    plt.axis('square')
+    plt.subplot(222)
+    plt.plot(X_norm[:,0],X_norm[:,1],'bo')
+
+    plt.subplot(221)
+
     plt.show()
+
+    plt.axis('square')
+    #plt.show()
     
     K = 1  # 定义降维多少维（本来是2维的，这里降维1维）
     '''投影之后数据（降维之后）'''
@@ -95,6 +116,7 @@ def projectData(X_norm,U,K):
     Z = np.zeros((X_norm.shape[0],K))
     
     U_reduce = U[:,0:K]          # 取前K个
+    print ('U_reduce\n',U_reduce)
     Z = np.dot(X_norm,U_reduce) 
     return Z
 
@@ -139,4 +161,4 @@ def display_imageData(imgData):
 
 if __name__ == "__main__":
     PCA_2D()
-    PCA_faceImage()
+    #PCA_faceImage()
