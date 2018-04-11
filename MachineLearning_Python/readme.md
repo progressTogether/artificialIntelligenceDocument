@@ -70,6 +70,8 @@
 		* [5、多元高斯分布](#5-多元高斯分布)
 		* [6、单元和多元高斯分布特点](#6-单元和多元高斯分布特点)
 		* [7、程序运行结果](#7-程序运行结果)
+	* [八、classification and regression tree ](#八-分类回归树)
+	    * xgboost graphviz sklearn pandas均可用sudo pip3 install即可
 
 ## 一、[线性回归](/LinearRegression)
 - [全部代码](/LinearRegression/LinearRegression.py)
